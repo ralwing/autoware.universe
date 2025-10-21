@@ -36,13 +36,23 @@ namespace autoware::pure_pursuit
 namespace tf_utils
 {
 rclcpp::Logger logger = rclcpp::get_logger(TF_UTILS_LOGGER);
-
-template <typename... TransformArgs>
 inline boost::optional<geometry_msgs::msg::TransformStamped> getTransform(
-  const tf2_ros::Buffer & tf_buffer, TransformArgs &&... args)
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to,
+  const rclcpp::Time & time, const rclcpp::Duration & duration)
 {
   try {
-    return tf_buffer.lookupTransform(std::forward<TransformArgs>(args)...);
+    return tf_buffer.lookupTransform(from, to, time, duration);
+  } catch (tf2::TransformException & ex) {
+    return {};
+  }
+}
+
+inline boost::optional<geometry_msgs::msg::TransformStamped> getTransform(
+  const tf2_ros::Buffer & tf_buffer, const std::string & from, const std::string & to,
+  const tf2::TimePoint & time, const tf2::Duration & duration)
+{
+  try {
+    return tf_buffer.lookupTransform(from, to, time, duration);
   } catch (tf2::TransformException & ex) {
     return {};
   }
@@ -79,7 +89,7 @@ inline boost::optional<geometry_msgs::msg::PoseStamped> getCurrentPose(
   const tf2_ros::Buffer & tf_buffer, const double timeout = 1.0)
 {
   const auto tf_current_pose =
-    getTransform(tf_buffer, "map", "base_link", tf2::TimePointZero, tf2::durationFromSec(0.0));
+    getTransform(tf_buffer, "map", "base_link", tf2::TimePointZero, tf2::durationFromSec(1.0));
   if (!tf_current_pose) {
     return {};
   }
